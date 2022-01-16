@@ -9,7 +9,7 @@ mapdata <- mapdata %>% rename(Country = region)
 mapdata<-left_join(mapdata,score, by="Country")
 view(mapdata)
 
-#score 2019 only
+#remove no score based on 2019
 mapdatanona <- mapdata %>% filter(!is.na(mapdata$score.2019))
 view(mapdatanona)
 
