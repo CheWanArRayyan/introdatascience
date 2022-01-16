@@ -1,0 +1,38 @@
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+
+mapdata<-map_data("world")
+mapdata$region[mapdata$region=="USA"] <- "United States"
+mapdata$region[mapdata$region=="UK"] <- "United Kingdom"
+mapdata <- mapdata %>% rename(Country = region)
+mapdata<-left_join(mapdata,score, by="Country")
+view(mapdata)
+
+#score 2019 only
+mapdatanona <- mapdata %>% filter(!is.na(mapdata$score.2019))
+view(mapdatanona)
+
+#basic map plot
+map1<-ggplot(mapdatanona, aes(x=long, y=lat, group=group)) + geom_polygon(aes(fill=score.2019), color = "purple4")
+map1
+
+#themed map plot from basic plot
+map2 <- map1 + scale_fill_gradient(name = "Global Peace Index", low = "springgreen", high = "purple2", na.value = "grey50") +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        rect = element_blank())
+map2
+
+#combines both from start + removes x y labels and background
+map3 <- ggplot(mapdatanona, aes(x=long, y=lat, group=group)) + geom_polygon(aes(fill=score.2019), color = "purple4") + scale_fill_gradient(name = "Global Peace Index", low = "springgreen", high = "purple2", na.value = "grey50") +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        rect = element_blank())
+map3
