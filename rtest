@@ -2,6 +2,7 @@ library(ggplot2)
 library(tidyverse)
 library(dplyr)
 
+score <- read.csv("score.csv")
 mapdata<-map_data("world")
 mapdata$region[mapdata$region=="USA"] <- "United States"
 mapdata$region[mapdata$region=="UK"] <- "United Kingdom"
