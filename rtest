@@ -1,39 +1,451 @@
+library(shiny)
 library(ggplot2)
-library(tidyverse)
 library(dplyr)
+library(shinythemes)
+library(maps)
+library(scales)
+GPI <- read.csv("gpi.csv")
 
-score <- read.csv("score.csv")
-mapdata<-map_data("world")
-mapdata$region[mapdata$region=="USA"] <- "United States"
-mapdata$region[mapdata$region=="UK"] <- "United Kingdom"
-mapdata <- mapdata %>% rename(Country = region)
-mapdata<-left_join(mapdata,score, by="Country")
-view(mapdata)
+ui<-fluidPage(navbarPage(theme = shinytheme("readable"),  "GLOBAL PEACE INDEX VISUALIZER",
+                         
+                         navbarMenu("Charts", icon = icon("chart-line"),
+                         
+                         tabPanel("Score",
+                                  headerPanel(h3('Global Peace Index Score')),
+                                  sidebarPanel(
+                                    selectizeInput("Countrya", 
+                                                   "Select a country:",
+                                                   choices = unique(GPI$Country),  
+                                                   selected="Malaysia", 
+                                                   multiple =FALSE
+                                    ),
+                                    sliderInput("Yeara", 
+                                                "Select year span:", 
+                                                min=2008, max=2019, 
+                                                value=c(2008, 2019),
+                                                sep=""),
+                                    
+                                    strong("INFORMATION"),
+                                    br(),
+                                    "This section visualizes the changes in GPI score of selected country over the years. 
+                                    It is used to measure how peaceful a country is based on 23 indicators of peace. 
+                                    The lower the score, the more peaceful a country is.",
+                                    br(),
+                                    "For more information, head to the About section at the top!"
+                                  ),
+                                  mainPanel(
+                                    plotOutput("compareplot", height=450),
+                                    
+                                  )
+                         ),
+                         
+                         tabPanel("Ranking",
+                                  headerPanel(h3('Global Peace Index Ranking')),
+                                  sidebarPanel(
+                                    selectizeInput("Countryb", 
+                                                   "Select a country:",
+                                                   choices = unique(GPI$Country),  
+                                                   selected="Malaysia", 
+                                                   multiple =FALSE
+                                    ),
+                                    sliderInput("Yearb", 
+                                                "Select year span:", 
+                                                min=2008, max=2019, 
+                                                value=c(2008, 2019),
+                                                sep=""),
+                                    
+                                    strong("INFORMATION"),
+                                    br(),
+                                    "This section visualizes the change in ranking of selected country over the years. However, ranking is not the best variable to compare
+                                    because as long as the score is not too high, it is still a peaceful country to live in!",
+                                    
+                                  ),
+                                  mainPanel(
+                                    plotOutput("compareplot1", height=450))
+                         )),
+              
+        tabPanel("Map", icon = icon("globe-americas"), 
+                 sidebarPanel(selectInput("year", "Select year", choices = (2008:2019)),
+                              "This section visualizes the GPI on the world map. Going through year by year, you can see a few countries slowly becoming more and more red (increase in GPI), which is not a really good thing.", br(), br(),
+                              "Were you able to list some of the countries with drastic GPI changes between 2008 to 2019?"),
+                 mainPanel(plotOutput("map", width = "960", height = "500px", hover = "score"))),
+              
+        tabPanel("About", icon = icon("info-circle"),
+         
+         sidebarPanel(
+           h4('Shiny App'),
+           p('This app visualizes the GPI in the form of graph and map. The Global Peace Index (GPI) measures the level of Negative Peace in a country. This data can be used to quantify global peacefulness and help to understand the factors that create peace in a society. The scores are calculated on a scale of 1-5 with 5 representing a high degree of violence in a country.'),
+           br(),
+           h4('Source of dataset'),
+           p('The dataset was taken from The Vision of Humanity, which was then uploaded to Kaggle'),
+           p('Access the free dataset', a('here',href= 'https://www.kaggle.com/xenohunter/global-peace-index')),
+           br(),
+           h4('The team'),
+           p('Aniq'),
+           p('Syaza'),
+           p('Sudarshan'),
+           p('Che Wan'),
+           br()
+         ),
+         mainPanel(
+           h2(strong("Indicators of Peace")),
+           
+           
+           h4('1. Intensity of Organised Internal Conflict '),
+           p('Assessment of the intensity of conflicts within the
+country, ranked from 1-5 (no conflict to severe crisis) by the EIU’s
+Country Analysis team. Country analysts are asked to assess this
+indicator on an annual basis, for the period March to March. '),br(),
+           
+           
+           h4('2.	Level of Perceived Criminality in Society '),
+           p(' This indicator uses a question from the Gallup World
+Poll as the basis for perceptions of criminality. The exact wording
+of the question is: “Do you feel safe walking alone at night in the
+city or area where you live?” IEP calculates the indicator score
+based on the percentage of people who answer ‘no’ to this
+question. '),
+           br(),
+           
+           h4('3. Number of Internal Security Officers
+and Police per 100,000 People'),
+           p('This indicator is sourced from the UNODC Survey of
+Crime Trends and Operations of Criminal Justice Systems and refers
+to the civil police force. Police refers to personnel in public agencies
+whose principal functions are the prevention, detection and
+investigation of crime and the apprehension of alleg'),br(),
+           
+           h4('4. Number of Homicides per 100,000 People '),
+           p('This indicator comes from the UNODC Survey of
+Crime Trends and Operations of Criminal Justice Systems.
+Intentional homicide refers to death deliberately inflicted on a
+person by another person, including infanticide. The figures refer
+to the total number of penal code offences or their equivalent, but
+exclude minor road traffic and other petty offences, brought to the
+attention of the police or other law enforcement agencies and
+recorded by one of those agencies.'),br(),
+           
+           h4('5. Number of Jailed Population per 100,000 People '),
+           p('Figures are from the Institute for Criminal Policy
+Research and are compiled from a variety of sources. In almost all
+cases the original source is the national prison administration of
+the country concerned, or else the Ministry responsible for the
+prison administration. Prison population rates per 100,000 people
+are based on estimates of the national population. In order to
+compare prison population rates, and to estimate the number of
+persons held in prison in the countries for which information is
+not available, median rates have been used by the Institute for
+Criminal Policy Research to minimise the effect of countries with
+rates that are untypically high or low. Indeed, comparability can
+be compromised by different practice in different countries, for
+example with regard to pre-trial detainees and juveniles, but also
+psychiatrically ill offenders and offenders being detained for
+treatment for alcoholism and drug addiction. '),br(),
+           
+           h4('6. Ease of Access to Small Arms and Light Weapons'),
+           p('Assessment of the accessibility of small arms and light
+weapons (SALW), ranked from 1-5 (very limited access to very easy
+access) by the EIU’s Country Analysis team. Country analysts are
+asked to assess this indicator on an annual basis, for the period
+from March to March.'),br(),
+           
+           h4('7. Likelihood of Violent Demonstrations '),
+           p('Assessment of the likelihood of violent
+demonstrations ranked from 1-5 (very low to very high) by the
+EIU’s Country Analysis team, based on the question, “Are violent
+demonstrations or violent civil/labour unrest likely to pose a
+threat to property or the conduct of business over the next two
+years?” Country analysts assess this question on a quarterly basis.
+The score provided for 16 March 2020 to 15 Mar'),br(),
+           
+           h4('8. Level of Violent Crime'),
+           p('Assessment of the likelihood of violent crime ranked
+from 1 to 5 (very low to very high) by the EIU’s Country Analysis
+team based on the question, “Is violent crime likely to pose a
+significant problem for government and/or business over the next
+two years?” Country analysts assess this question on a quarterly
+basis. The score provided for 16 March 2020 to 15 March 2021 is
+the average of the scores given for each quarter. '),br(),
+           
+           h4('9. Political Instability '),
+           p(': Assessment of political instability ranked from
+0 to 100 (very low to very high instability) by the EIU’s Country
+Analysis team, based on five questions. This indicator aggregates
+five other questions on social unrest, orderly transfers, opposition
+stance, excessive executive authority and an international tension
+sub-index. Country analysts assess this question on a quarterly
+basis. The score provided for 16 March 2020 to 15 March 2021 is the
+average of the scores given for each quarter.'),br(),
+           
+           h4('10. Political Terror Scale '),
+           p('The Political Terror Scale (PTS) measures levels of
+political violence and terror that a country experiences in a given
+year based on a 5-level “terror scale” originally developed by
+Freedom House. The data used in compiling this index comes from
+two different sources: the yearly country reports of Amnesty
+International and the US Department of State’s Country Reports on
+Human Rights Practices. The average of the two scores is taken. '),br(),
+           
+           h4('11. Volume of Transfers of Major Conventional Weapons,
+as recipient (imports) per 100,000 people'),
+           p('Measures the total volume of major conventional
+weapons imported by a country between 2014 and 2018, divided by
+the average population in this time period at the 100,000 people
+level (population data supplied by the EIU). The SIPRI Arms
+Transfers Database covers all international sales and gifts of major
+conventional weapons and the technology necessary for their
+production. The transfer equipment or technology is from one
+country, rebel force or international organisation to another
+country, rebel force or international organisation. Major
+conventional weapons include: aircraft, armoured vehicles,
+artillery, radar systems, missiles, ships, engines. '),br(),
+           
+           h4('12. Impact of Terrorism '),
+           p('Terrorist incidents are defined as “intentional acts of
+violence or threat of violence by a non-state actor.” This means an incident has to meet three criteria in order for it to be counted as a
+terrorist act'),br(),
+           
+           h4('13. Number Of Deaths From Organised Internal Conflict '),
+           p(' This indicator uses the UCDP’s definition of conflict.
+UCDP defines conflict as: “a contested incompatibility that
+concerns government and/or territory where the use of armed
+force between two parties, results in at least 25 battle-related
+deaths in a year.” '),br(),
+           
+           h4('14. Number and Duration of Internal Conflicts'),
+           p('This indicator measures the number and duration of
+conflicts that occur within a specific country’s legal boundaries.
+Information for this indicator is sourced from three datasets from
+Uppsala Conflict Data Program (UCDP): the Battle-Related Deaths
+Dataset, Non-State Conflict Dataset and One-sided Violence
+Dataset. The score for a country is determined by adding the
+scores for all individual conflicts which have occurred within that
+country’s legal boundaries over the last five years.'),br(),
+           
+           h4('15. Military Expenditure as a Percentage of GDP'),
+           p('Cash outlays of central or federal government to meet
+the costs of national armed forces—including strategic, land, naval,
+air, command, administration and support forces as well as
+paramilitary forces, customs forces and border guards if these are
+trained and equipped as a military force. Published EIU data on
+nominal GDP (or the World Bank when unavailable) was used to
+arrive at the value of military expenditure as a percentage of GDP.'),br(),
+           
+           h4('16. Number of Armed Services Personnel
+per 100,000 people '),
+           p('Active armed services personnel comprise all service
+men and women on full-time duty in the army, navy, air force and
+joint forces (including conscripts and long-term assignments from
+the reserves). Population data provided by the EIU. '),br(),
+           
+           h4('17. Financial Contribution to UN Peacekeeping Missions'),br(),
+           p(' The UNFU indicator measures whether UN
+member countries meet their UN peacekeeping funding
+commitments. Although countries may fund other programs in
+development or peacebuilding, the records on peacekeeping are
+easy to obtain and understand and provide an instructive measure
+of a country’s commitment to peace. The indicator calculates the
+percentage of countries’ “outstanding payments versus their
+annual assessment to the budget of the current peacekeeping
+missions” over an average of three years. This ratio is derived from
+data provided by the United Nations Committee on Contributions
+Status reports'),br(),
+           
+           h4('18. Nuclear and Heavy Weapons Capabilities'),
+           p('This indicator is based on a categorised system for
+rating the destructive capability of a country’s stock of heavy
+weapons. Holdings are those of government forces and do not
+include holdings of armed opposition groups. Heavy weapons
+numbers were determined using a combination of the
+International Institute for Strategic Studies, The Military Balance
+and the United Nations Register of Conventional Arms.'),br(),
+           
+           h4('19. Volume of Transfers of Major Conventional Weapons
+as Supplier (Exports) per 100,000 people'),
+           p('Measures the total volume of major conventional
+weapons exported by a country between 2015 and 2019 divided by
+the average population during this time period (population data
+supplied by the EIU). The SIPRI Arms Transfers Database covers all international sales and gifts of major conventional weapons
+and the technology necessary for the production of them. The
+transfer equipment or technology is from one country, rebel force
+or international organisation to another country, rebel force or
+international organisation. Major conventional weapons include:
+aircraft, armoured vehicles, artillery, radar systems, missiles, ships
+and engines.'),br(),
+           
+           h4('20. Number of Refugees and Internally Displaced People
+as a Percentage of the Population'),
+           p(' Refugee population by country or territory of origin
+plus the number of a country’s internally displaced people
+(IDPs), as a percentage of the country’s total population.'),br(),
+           
+           h4('21. Relations with Neighbouring Countries '),
+           p('Assessment of the intensity of contentiousness of
+neighbours, ranked from 1-5 (peaceful to very aggressive) by the
+EIU’s Country Analysis team. Country analysts are asked to assess
+this indicator on an annual basis, for the period March to March. '),br(),
+           
+           h4('22. Number, duration and role
+in external conflicts'),
+           p('This indicator measures the number and duration of
+extraterritorial conflicts a country is involved in. Information for
+this indicator is sourced from the UCDP Battle-Related Deaths
+Dataset. The score for a country is determined by adding all
+individual conflict scores where that country is involved as an
+actor in a conflict outside its legal boundaries. Conflicts are not
+counted against a country if they have already been counted
+against that country in the number and duration of internal
+conflicts indicator.'),br(),
+           
+           h4('23. Number Of Deaths From Organised External Conflict'),
+           p('This indicator uses the UCDP’s definition of conflict
+as “a contested incompatibility that concerns government and/or
+territory where the use of armed force between two parties, results
+in at least 25 battle-related deaths in a year”.'),br()
+           
+         )
+         
+)))
 
-#remove no score based on 2019
-mapdatanona <- mapdata %>% filter(!is.na(mapdata$score.2019))
-view(mapdatanona)
+server <- function(input,output){
+  
+  output$map <- renderPlot({
+    
+    score <- read.csv("score.csv")
+    mapdata<-map_data("world")
+    mapdata$region[mapdata$region=="USA"] <- "United States"
+    mapdata$region[mapdata$region=="UK"] <- "United Kingdom"
+    mapdata <- mapdata %>% rename(Country = region)
+    mapdata<-left_join(mapdata,score, by="Country")
+    
+    #remove no score based on 2019
+    mapdatanona <- mapdata %>% filter(!is.na(mapdata$score.2019))
+   
+    #final datasets
+    score2019 <- mapdatanona %>%  select(long, lat, group, Country, score.2019)
+    score2018 <- mapdatanona %>%  select(long, lat, group, Country, score.2018)
+    score2017 <- mapdatanona %>%  select(long, lat, group, Country, score.2017)
+    score2016 <- mapdatanona %>%  select(long, lat, group, Country, score.2016)
+    score2015 <- mapdatanona %>%  select(long, lat, group, Country, score.2015)
+    score2014 <- mapdatanona %>%  select(long, lat, group, Country, score.2014)
+    score2013 <- mapdatanona %>%  select(long, lat, group, Country, score.2013)
+    score2012 <- mapdatanona %>%  select(long, lat, group, Country, score.2012)
+    score2011 <- mapdatanona %>%  select(long, lat, group, Country, score.2011)
+    score2010 <- mapdatanona %>%  select(long, lat, group, Country, score.2010)
+    score2009 <- mapdatanona %>%  select(long, lat, group, Country, score.2009)
+    score2008 <- mapdatanona %>%  select(long, lat, group, Country, score.2008)
+    
+    if(input$year==2008){
+    map2008 <- ggplot(score2008, aes(x=long, y=lat, group=group)) + geom_polygon(aes(fill=score.2008), color = "purple4") + scale_fill_gradient(name = "Global Peace Index", low = "cornflowerblue", high = "lightpink1", na.value = "grey93") +
+      theme(axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(), axis.title.x = element_blank(), axis.title.y = element_blank(), rect = element_blank())
+    map2008}
+    
+    else if(input$year==2009){
+      map3 <- ggplot(score2009, aes(x=long, y=lat, group=group)) + geom_polygon(aes(fill=score.2009), color = "purple4") + scale_fill_gradient(name = "Global Peace Index", low = "cornflowerblue", high = "lightpink1", na.value = "grey93") +
+        theme(axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(), axis.title.x = element_blank(), axis.title.y = element_blank(), rect = element_blank())
+      map3}
+    
+    else if(input$year==2010){
+      map3 <- ggplot(score2010, aes(x=long, y=lat, group=group)) + geom_polygon(aes(fill=score.2010), color = "purple4") + scale_fill_gradient(name = "Global Peace Index", low = "cornflowerblue", high = "lightpink1", na.value = "grey93") +
+        theme(axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(), axis.title.x = element_blank(), axis.title.y = element_blank(), rect = element_blank())
+      map3}
+    
+    else if(input$year==2011){
+      map3 <- ggplot(score2011, aes(x=long, y=lat, group=group)) + geom_polygon(aes(fill=score.2011), color = "purple4") + scale_fill_gradient(name = "Global Peace Index", low = "cornflowerblue", high = "lightpink1", na.value = "grey93") +
+        theme(axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(), axis.title.x = element_blank(), axis.title.y = element_blank(), rect = element_blank())
+      map3}
+    
+    else if(input$year==2012){
+      map3 <- ggplot(score2012, aes(x=long, y=lat, group=group)) + geom_polygon(aes(fill=score.2012), color = "purple4") + scale_fill_gradient(name = "Global Peace Index", low = "cornflowerblue", high = "lightpink1", na.value = "grey93") +
+        theme(axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(), axis.title.x = element_blank(), axis.title.y = element_blank(), rect = element_blank())
+      map3}
+    
+    else if(input$year==2013){
+      map3 <- ggplot(score2013, aes(x=long, y=lat, group=group)) + geom_polygon(aes(fill=score.2013), color = "purple4") + scale_fill_gradient(name = "Global Peace Index", low = "cornflowerblue", high = "lightpink1", na.value = "grey93") +
+        theme(axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(), axis.title.x = element_blank(), axis.title.y = element_blank(), rect = element_blank())
+      map3}
+    
+    else if(input$year==2014){
+      map3 <- ggplot(score2014, aes(x=long, y=lat, group=group)) + geom_polygon(aes(fill=score.2014), color = "purple4") + scale_fill_gradient(name = "Global Peace Index", low = "cornflowerblue", high = "lightpink1", na.value = "grey93") +
+        theme(axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(), axis.title.x = element_blank(), axis.title.y = element_blank(), rect = element_blank())
+      map3}
+    
+    else if(input$year==2015){
+      map3 <- ggplot(score2015, aes(x=long, y=lat, group=group)) + geom_polygon(aes(fill=score.2015), color = "purple4") + scale_fill_gradient(name = "Global Peace Index", low = "cornflowerblue", high = "lightpink1", na.value = "grey93") +
+        theme(axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(), axis.title.x = element_blank(), axis.title.y = element_blank(), rect = element_blank())
+      map3}
+    
+    else if(input$year==2016){
+      map3 <- ggplot(score2016, aes(x=long, y=lat, group=group)) + geom_polygon(aes(fill=score.2016), color = "purple4") + scale_fill_gradient(name = "Global Peace Index", low = "cornflowerblue", high = "lightpink1", na.value = "grey93") +
+        theme(axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(), axis.title.x = element_blank(), axis.title.y = element_blank(), rect = element_blank())
+      map3}
+    
+    else if(input$year==2017){
+      map3 <- ggplot(score2017, aes(x=long, y=lat, group=group)) + geom_polygon(aes(fill=score.2017), color = "purple4") + scale_fill_gradient(name = "Global Peace Index", low = "cornflowerblue", high = "lightpink1", na.value = "grey93") +
+        theme(axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(), axis.title.x = element_blank(), axis.title.y = element_blank(), rect = element_blank())
+      map3}
+    
+    else if(input$year==2018){
+      map3 <- ggplot(score2018, aes(x=long, y=lat, group=group)) + geom_polygon(aes(fill=score.2018), color = "purple4") + scale_fill_gradient(name = "Global Peace Index", low = "cornflowerblue", high = "lightpink1", na.value = "grey93") +
+        theme(axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(), axis.title.x = element_blank(), axis.title.y = element_blank(), rect = element_blank())
+      map3}
+    
+    else if(input$year==2019){
+      map3 <- ggplot(score2019, aes(x=long, y=lat, group=group)) + geom_polygon(aes(fill=score.2019), color = "purple4") + scale_fill_gradient(name = "Global Peace Index", low = "cornflowerblue", high = "lightpink1", na.value = "grey93") +
+        theme(axis.text.x = element_blank(), axis.text.y = element_blank(), axis.ticks = element_blank(), axis.title.x = element_blank(), axis.title.y = element_blank(), rect = element_blank())
+      map3}
+    
+  })
+  
+  output$compareplot <- renderPlot({
+    
+    
+    GPI <- filter(GPI, 
+                  Country == input$Countrya, 
+                  Year >= input$Yeara[1],
+                  Year <= input$Yeara[2])
+    
+    p <- ggplot(GPI, aes(x=Year, y = Score, group = Country, color= Country)) +
+      geom_line(size=1.2, color="cornflowerblue") + 
+      theme_classic() + 
+      xlab("Year") +
+      ylab("Global Peace Index Score") +
+      theme(legend.title = element_text(size=15, face="bold")) + 
+      theme(legend.text = element_text(size=15)) +
+      theme(axis.text=element_text(size=15),
+            axis.title.x = element_text(size=18, face="bold",margin = margin(t = 20, r = 0, b = 0, l = 0)),
+            axis.title.y = element_text(size=18, face="bold",margin = margin(t = 0, r = 20, b = 0, l = 0)))
+    
+    p + scale_x_continuous(
+      labels = label_number(accuracy = 1)
+    ) 
+  })
+  
+  output$compareplot1 <- renderPlot({
+    
+    GPI <- filter(GPI, 
+                  Country == input$Countryb, 
+                  Year >= input$Yearb[1],
+                  Year <= input$Yearb[2])
+    
+    a <- ggplot(GPI, aes(x=Year, y = Rank, group = Country, color= Country)) +
+      geom_line(size=1.2, color="cornflowerblue") + 
+      theme_classic() + 
+      xlab("Year") +
+      ylab("Global Peace Index Ranking") +
+      theme(legend.title = element_text(size=15, face="bold")) + 
+      theme(legend.text = element_text(size=15)) +
+      theme(axis.text=element_text(size=15),
+            axis.title.x = element_text(size=18, face="bold",margin = margin(t = 20, r = 0, b = 0, l = 0)),
+            axis.title.y = element_text(size=18, face="bold",margin = margin(t = 0, r = 20, b = 0, l = 0))) + scale_y_reverse()
+    
+    a + scale_x_continuous(
+      labels = label_number(accuracy = 1) 
+    )
+    
+  })
+}
 
-#basic map plot
-map1<-ggplot(mapdatanona, aes(x=long, y=lat, group=group)) + geom_polygon(aes(fill=score.2019), color = "purple4")
-map1
+shinyApp(ui = ui, server = server)
 
-#themed map plot from basic plot
-map2 <- map1 + scale_fill_gradient(name = "Global Peace Index", low = "springgreen", high = "purple2", na.value = "grey50") +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank(),
-        axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
-        rect = element_blank())
-map2
 
-#combines both from start + removes x y labels and background
-map3 <- ggplot(mapdatanona, aes(x=long, y=lat, group=group)) + geom_polygon(aes(fill=score.2019), color = "purple4") + scale_fill_gradient(name = "Global Peace Index", low = "springgreen", high = "purple2", na.value = "grey50") +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank(),
-        axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
-        rect = element_blank())
-map3
